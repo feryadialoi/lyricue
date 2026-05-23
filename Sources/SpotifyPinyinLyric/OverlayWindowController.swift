@@ -9,7 +9,7 @@ final class OverlayWindowController: NSWindowController {
 
     convenience init() {
         let window = DraggableWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 110),
+            contentRect: NSRect(x: 0, y: 0, width: 520, height: 130),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false

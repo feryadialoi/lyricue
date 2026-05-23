@@ -9,10 +9,11 @@ struct ContentView: View {
                 .fill(Color.black.opacity(0.75))
 
             content
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
         }
-        .frame(width: 500, height: 110)
+        .frame(width: 520, height: 130)
+        .clipped()
         .opacity(viewModel.isPaused ? 0.4 : 1.0)
         .animation(.easeInOut(duration: 0.3), value: viewModel.isPaused)
     }
@@ -20,55 +21,21 @@ struct ContentView: View {
     @ViewBuilder
     private var content: some View {
         if viewModel.showLyrics {
-            VStack(spacing: 2) {
-                // Current line
-                VStack(spacing: 2) {
-                    if !viewModel.currentPinyin.isEmpty {
-                        Text(viewModel.currentPinyin)
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    }
+            VStack(spacing: 6) {
+                AlignedLyricLine(text: viewModel.currentHanzi)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .move(edge: .top).combined(with: .opacity)
+                    ))
+                    .id(viewModel.currentHanzi)
 
-                    Text(viewModel.currentHanzi)
-                        .font(.title2)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                }
-                .transition(.asymmetric(
-                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                    removal: .move(edge: .top).combined(with: .opacity)
-                ))
-                .id(viewModel.currentHanzi)
-
-                // Next line preview
                 if !viewModel.nextHanzi.isEmpty {
-                    VStack(spacing: 1) {
-                        if !viewModel.nextPinyin.isEmpty {
-                            Text(viewModel.nextPinyin)
-                                .font(.caption2)
-                                .foregroundColor(Color.gray.opacity(0.45))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.6)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                        }
-
-                        Text(viewModel.nextHanzi)
-                            .font(.callout)
-                            .foregroundColor(Color.white.opacity(0.35))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    }
-                    .transition(.opacity)
-                    .id("next-\(viewModel.nextHanzi)")
+                    AlignedLyricLine(text: viewModel.nextHanzi, scale: 0.6, dimmed: true)
+                        .transition(.opacity)
+                        .id("next-\(viewModel.nextHanzi)")
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .animation(.easeInOut(duration: 0.3), value: viewModel.currentHanzi)
             .animation(.easeInOut(duration: 0.2), value: viewModel.nextHanzi)
         } else {
@@ -77,9 +44,50 @@ struct ContentView: View {
                 .foregroundColor(Color.white.opacity(0.6))
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .transition(.opacity)
                 .animation(.easeInOut(duration: 0.2), value: viewModel.statusMessage)
         }
+    }
+}
+
+/// Renders a lyric line with pinyin syllables aligned directly above each Hanzi character.
+struct AlignedLyricLine: View {
+    let text: String
+    var scale: CGFloat = 1.0
+    var dimmed: Bool = false
+
+    private var tokens: [LyricToken] { tokenize(text) }
+    private var hanziSize: CGFloat { 20 * scale }
+    private var pinyinSize: CGFloat { 11 * scale }
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 2 * scale) {
+            ForEach(Array(tokens.enumerated()), id: \.offset) { _, token in
+                VStack(spacing: 1) {
+                    if !token.pinyin.isEmpty {
+                        Text(token.pinyin)
+                            .font(.system(size: pinyinSize))
+                            .foregroundColor(dimmed ? Color.gray.opacity(0.4) : .gray)
+                            .lineLimit(1)
+                            .fixedSize()
+                    } else {
+                        // Invisible placeholder keeps baselines aligned
+                        Color.clear
+                            .frame(width: 1, height: pinyinSize + 1)
+                    }
+
+                    Text(token.text)
+                        .font(.system(size: hanziSize, weight: dimmed ? .regular : .medium))
+                        .foregroundColor(dimmed ? Color.white.opacity(0.35) : .white)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        // Scale down the whole row if it overflows the pill width
+        .minimumScaleFactor(0.5)
+        .lineLimit(1)
     }
 }

@@ -5,18 +5,21 @@ import Combine
 final class LyricsViewModel: ObservableObject {
     @Published var currentHanzi: String = ""
     @Published var currentPinyin: String = ""
+    @Published var nextHanzi: String = ""
+    @Published var nextPinyin: String = ""
     @Published var statusMessage: String = "Waiting for Spotify…"
     @Published var showLyrics: Bool = false
+    @Published var isPaused: Bool = false
 
     private let spotifyMonitor = SpotifyMonitor()
     private let lyricsService = LyricsService()
     private var cancellables = Set<AnyCancellable>()
 
-    // Track the lyrics we have loaded and which track they belong to.
     private var loadedTrackKey: String = ""
     private var loadedLines: [LyricLine] = []
     private var isLoadingLyrics: Bool = false
     private var noLyricsAvailable: Bool = false
+    private var lastActiveIndex: Int = -1
 
     init() {
         spotifyMonitor.$currentTrack
@@ -31,19 +34,24 @@ final class LyricsViewModel: ObservableObject {
         guard let track else {
             statusMessage = "No track playing"
             showLyrics = false
+            isPaused = false
             currentHanzi = ""
             currentPinyin = ""
+            nextHanzi = ""
+            nextPinyin = ""
             return
         }
+
+        isPaused = track.isPaused
 
         let trackKey = "\(track.title)|\(track.artist)"
 
         if trackKey != loadedTrackKey {
-            // New track — reset state and fetch lyrics.
             loadedTrackKey = trackKey
             loadedLines = []
             noLyricsAvailable = false
             isLoadingLyrics = true
+            lastActiveIndex = -1
             showLyrics = false
             statusMessage = "Loading lyrics for \(track.title)…"
 
@@ -70,7 +78,6 @@ final class LyricsViewModel: ObservableObject {
             }
         }
 
-        // Update the displayed lyric line based on current position.
         if !loadedLines.isEmpty {
             updateCurrentLine(position: track.position, trackTitle: track.title)
         }
@@ -80,30 +87,43 @@ final class LyricsViewModel: ObservableObject {
 
     private func updateCurrentLine(position: Double, trackTitle: String) {
         let adjustedPosition = position + Self.lyricLeadSeconds
-        // Find the last line whose time is <= adjusted position.
-        var activeLine: LyricLine? = nil
-        for line in loadedLines {
+
+        var activeIndex: Int = -1
+        for (i, line) in loadedLines.enumerated() {
             if line.time <= adjustedPosition {
-                activeLine = line
+                activeIndex = i
             } else {
                 break
             }
         }
 
-        guard let line = activeLine, !line.text.isEmpty else {
-            // Before the first lyric or on an empty line — show track title.
+        guard activeIndex >= 0, !loadedLines[activeIndex].text.isEmpty else {
             showLyrics = false
             statusMessage = trackTitle
+            lastActiveIndex = -1
+            nextHanzi = ""
+            nextPinyin = ""
             return
         }
 
-        let hanzi = line.text
-        let pinyin = containsHanzi(hanzi) ? toPinyin(hanzi) : ""
+        // Next non-empty line
+        let nextLine = loadedLines[(activeIndex + 1)...].first { !$0.text.isEmpty }
+        let newNextHanzi = nextLine?.text ?? ""
+        let newNextPinyin = newNextHanzi.isEmpty ? "" : (containsHanzi(newNextHanzi) ? toPinyin(newNextHanzi) : "")
 
-        if hanzi != currentHanzi || pinyin != currentPinyin {
-            currentHanzi = hanzi
-            currentPinyin = pinyin
-            showLyrics = true
+        let line = loadedLines[activeIndex]
+        let newHanzi = line.text
+        let newPinyin = containsHanzi(newHanzi) ? toPinyin(newHanzi) : ""
+
+        if newHanzi != currentHanzi || newPinyin != currentPinyin {
+            currentHanzi = newHanzi
+            currentPinyin = newPinyin
+            lastActiveIndex = activeIndex
+        }
+
+        if newNextHanzi != nextHanzi || newNextPinyin != nextPinyin {
+            nextHanzi = newNextHanzi
+            nextPinyin = newNextPinyin
         }
 
         if !showLyrics { showLyrics = true }

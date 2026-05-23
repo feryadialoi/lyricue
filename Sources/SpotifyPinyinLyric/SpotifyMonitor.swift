@@ -5,6 +5,7 @@ struct SpotifyTrack: Equatable {
     let title: String
     let artist: String
     let position: Double
+    let isPaused: Bool
 }
 
 @MainActor
@@ -33,12 +34,17 @@ final class SpotifyMonitor: ObservableObject {
     private func poll() async {
         let script = """
         tell application "Spotify"
-            if player state is playing then
-                set trackName to name of current track
-                set artistName to artist of current track
-                set pos to player position
-                return trackName & "|" & artistName & "|" & pos
+            set playerSt to player state
+            if playerSt is stopped then return ""
+            set trackName to name of current track
+            set artistName to artist of current track
+            set pos to player position
+            if playerSt is paused then
+                set isPausedStr to "true"
+            else
+                set isPausedStr to "false"
             end if
+            return trackName & "|" & artistName & "|" & pos & "|" & isPausedStr
         end tell
         """
 
@@ -67,9 +73,9 @@ final class SpotifyMonitor: ObservableObject {
         let title = parts[0]
         let artist = parts[1]
         let posString = parts[2].trimmingCharacters(in: .whitespacesAndNewlines)
-        // Spotify position may be a localized decimal string; normalize separator.
         let normalizedPos = posString.replacingOccurrences(of: ",", with: ".")
         let position = Double(normalizedPos) ?? 0.0
-        self.currentTrack = SpotifyTrack(title: title, artist: artist, position: position)
+        let isPaused = parts.count >= 4 && parts[3].trimmingCharacters(in: .whitespacesAndNewlines) == "true"
+        self.currentTrack = SpotifyTrack(title: title, artist: artist, position: position, isPaused: isPaused)
     }
 }

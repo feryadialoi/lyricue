@@ -1,14 +1,15 @@
 import AppKit
 import SwiftUI
 
-/// A borderless, always-on-top floating window that hosts the lyric overlay.
+private let savedOriginXKey = "overlayOriginX"
+private let savedOriginYKey = "overlayOriginY"
+
 final class OverlayWindowController: NSWindowController {
-    private let viewModel = LyricsViewModel()
+    let viewModel = LyricsViewModel()
 
     convenience init() {
-        // Build the borderless window.
         let window = DraggableWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 100),
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 110),
             styleMask: [.borderless],
             backing: .buffered,
             defer: false
@@ -17,43 +18,56 @@ final class OverlayWindowController: NSWindowController {
         window.isOpaque = false
         window.backgroundColor = .clear
         window.hasShadow = true
-        window.isMovableByWindowBackground = false  // We handle dragging manually.
+        window.isMovableByWindowBackground = false
         window.collectionBehavior = [.canJoinAllSpaces, .stationary]
 
         self.init(window: window)
 
-        // Embed the SwiftUI view.
-        let viewModel = self.viewModel
-        let rootView = ContentView(viewModel: viewModel)
+        let rootView = ContentView(viewModel: self.viewModel)
         let hostingView = NSHostingView(rootView: rootView)
         hostingView.frame = window.contentView!.bounds
         hostingView.autoresizingMask = [.width, .height]
         window.contentView = hostingView
 
-        // Position the window at the bottom-center of the main screen.
         positionWindow(window)
 
-        // Allow Cmd+Q to quit the app.
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "q" {
                 NSApp.terminate(nil)
             }
             return event
         }
+
+        // Save position whenever the window is moved.
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.didMoveNotification,
+            object: window,
+            queue: .main
+        ) { [weak window] _ in
+            guard let origin = window?.frame.origin else { return }
+            UserDefaults.standard.set(Double(origin.x), forKey: savedOriginXKey)
+            UserDefaults.standard.set(Double(origin.y), forKey: savedOriginYKey)
+        }
     }
 
     private func positionWindow(_ window: NSWindow) {
-        guard let screen = NSScreen.main else { return }
-        let screenFrame = screen.visibleFrame
-        let windowSize = window.frame.size
-        let x = screenFrame.midX - windowSize.width / 2
-        let y = screenFrame.minY + 40
-        window.setFrameOrigin(NSPoint(x: x, y: y))
+        let defaults = UserDefaults.standard
+        if defaults.object(forKey: savedOriginXKey) != nil {
+            let x = defaults.double(forKey: savedOriginXKey)
+            let y = defaults.double(forKey: savedOriginYKey)
+            window.setFrameOrigin(NSPoint(x: x, y: y))
+        } else {
+            // Default: bottom-center of main screen.
+            guard let screen = NSScreen.main else { return }
+            let screenFrame = screen.visibleFrame
+            let windowSize = window.frame.size
+            let x = screenFrame.midX - windowSize.width / 2
+            let y = screenFrame.minY + 40
+            window.setFrameOrigin(NSPoint(x: x, y: y))
+        }
     }
 }
 
-/// An NSWindow subclass that forwards mouse-drag events so the window can be
-/// repositioned by clicking anywhere on it.
 final class DraggableWindow: NSWindow {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }

@@ -76,11 +76,14 @@ final class LyricsViewModel: ObservableObject {
         }
     }
 
+    private static let lyricLeadSeconds: Double = 0.5
+
     private func updateCurrentLine(position: Double, trackTitle: String) {
-        // Find the last line whose time is <= current position.
+        let adjustedPosition = position + Self.lyricLeadSeconds
+        // Find the last line whose time is <= adjusted position.
         var activeLine: LyricLine? = nil
         for line in loadedLines {
-            if line.time <= position {
+            if line.time <= adjustedPosition {
                 activeLine = line
             } else {
                 break

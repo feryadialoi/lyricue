@@ -83,7 +83,7 @@ final class LyricsViewModel: ObservableObject {
         }
     }
 
-    private static let lyricLeadSeconds: Double = 0.5
+    private static let lyricLeadSeconds: Double = 0.3
 
     private func updateCurrentLine(position: Double, trackTitle: String) {
         let adjustedPosition = position + Self.lyricLeadSeconds

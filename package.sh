@@ -19,6 +19,9 @@ cp "${RELEASE_BINARY}"  "${APP_BUNDLE}/Contents/MacOS/${APP_NAME}"
 cp Info.plist           "${APP_BUNDLE}/Contents/Info.plist"
 cp AppIcon.icns         "${APP_BUNDLE}/Contents/Resources/AppIcon.icns"
 
+echo "Ad-hoc signing..."
+codesign --sign - --force --deep --preserve-metadata=entitlements "${APP_BUNDLE}"
+
 echo "Creating .dmg..."
 rm -rf "${DMG_STAGING}" "${DMG_NAME}"
 mkdir "${DMG_STAGING}"

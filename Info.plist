@@ -2,9 +2,29 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleName</key>
+    <string>SpotifyPinyinLyric</string>
+    <key>CFBundleDisplayName</key>
+    <string>Spotify Pinyin Lyric</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.feryadi.spotify-pinyin-lyric</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleExecutable</key>
+    <string>SpotifyPinyinLyric</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSAppleEventsUsageDescription</key>
-    <string>This app needs to communicate with Spotify to get the current track information.</string>
+    <string>This app communicates with Spotify to show synced lyrics with phonetic readings.</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
 </dict>
 </plist>

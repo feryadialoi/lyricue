@@ -97,7 +97,7 @@ final class LyricsViewModel: ObservableObject {
             }
         }
 
-        guard activeIndex >= 0, !loadedLines[activeIndex].text.isEmpty else {
+        guard activeIndex >= 0 else {
             showLyrics = false
             statusMessage = trackTitle
             lastActiveIndex = -1
@@ -106,12 +106,31 @@ final class LyricsViewModel: ObservableObject {
             return
         }
 
+        // If the current line is empty (interlude/gap), keep showing the last
+        // non-empty line so the display doesn't flicker back to the track title.
+        let resolvedIndex: Int
+        if loadedLines[activeIndex].text.isEmpty {
+            // Find the most recent non-empty line before this position.
+            if let lastNonEmpty = (0..<activeIndex).reversed().first(where: { !loadedLines[$0].text.isEmpty }) {
+                resolvedIndex = lastNonEmpty
+            } else {
+                // Still before the first lyric — show track title
+                showLyrics = false
+                statusMessage = trackTitle
+                nextHanzi = ""
+                nextPinyin = ""
+                return
+            }
+        } else {
+            resolvedIndex = activeIndex
+        }
+
         // Next non-empty line
-        let nextLine = loadedLines[(activeIndex + 1)...].first { !$0.text.isEmpty }
+        let nextLine = loadedLines[(resolvedIndex + 1)...].first { !$0.text.isEmpty }
         let newNextHanzi = nextLine?.text ?? ""
         let newNextPinyin = newNextHanzi.isEmpty ? "" : (containsHanzi(newNextHanzi) ? toPinyin(newNextHanzi) : "")
 
-        let line = loadedLines[activeIndex]
+        let line = loadedLines[resolvedIndex]
         let newHanzi = line.text
         let newPinyin = containsHanzi(newHanzi) ? toPinyin(newHanzi) : ""
 

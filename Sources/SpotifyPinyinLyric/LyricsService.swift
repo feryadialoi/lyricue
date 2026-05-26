@@ -32,7 +32,9 @@ actor LyricsService {
 
         do {
             let lines = try await task.value
-            cache[key] = lines
+            // Only cache successful non-empty results — empty means not found,
+            // and we want to retry on the next track play.
+            if !lines.isEmpty { cache[key] = lines }
             inflight.removeValue(forKey: key)
             return lines
         } catch {
@@ -73,11 +75,14 @@ actor LyricsService {
     }
 
     private func fetchViaSearch(title: String, artist: String) async throws -> [LyricLine] {
-        // Build a search query from the artist + a simplified title (strip parentheticals).
+        // Strip parentheticals from both title and artist before searching.
         let simplifiedTitle = title
-            .replacingOccurrences(of: "\\s*[（(][^）)]*[）)]", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "\\s*[（(【【『][^）)】】』]*[）)】】』]", with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
-        let query = "\(simplifiedTitle) \(artist)"
+        let simplifiedArtist = artist
+            .replacingOccurrences(of: "\\s*[（(【『][^）)】』]*[）)】』]", with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+        let query = "\(simplifiedTitle) \(simplifiedArtist)"
         guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
               let url = URL(string: "https://lrclib.net/api/search?q=\(encoded)") else {
             throw URLError(.badURL)
@@ -98,7 +103,8 @@ actor LyricsService {
         let results = try JSONDecoder().decode([SearchResult].self, from: data)
 
         // Pick the first result whose artist roughly matches.
-        let artistLower = artist.lowercased()
+        // Use simplified artist (no parentheticals) for comparison.
+        let artistLower = simplifiedArtist.lowercased()
         let best = results.first { $0.artistName.lowercased() == artistLower }
                 ?? results.first { $0.artistName.lowercased().contains(artistLower) || artistLower.contains($0.artistName.lowercased()) }
                 ?? results.first

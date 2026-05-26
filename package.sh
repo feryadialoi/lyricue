@@ -26,8 +26,8 @@ echo "Creating .dmg..."
 rm -rf "${DMG_STAGING}" "${DMG_NAME}"
 mkdir "${DMG_STAGING}"
 cp -r "${APP_BUNDLE}" "${DMG_STAGING}/"
-cp install.sh "${DMG_STAGING}/Install.command"
-chmod +x "${DMG_STAGING}/Install.command"
+# Strip quarantine before packaging so the recipient never gets the "damaged" error
+xattr -cr "${DMG_STAGING}/${APP_BUNDLE}"
 # Symlink to /Applications so user can drag-and-drop inside the DMG
 ln -s /Applications "${DMG_STAGING}/Applications"
 
@@ -43,4 +43,4 @@ rm -rf "${DMG_STAGING}"
 
 echo ""
 echo "Done! Share: $(pwd)/${DMG_NAME}"
-echo "Recipient: open DMG, double-click Install.command to install"
+echo "Recipient: open DMG, drag app to Applications"

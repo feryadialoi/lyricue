@@ -1,5 +1,12 @@
 import SwiftUI
 
+private struct RowWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 struct ContentView: View {
     @ObservedObject var viewModel: LyricsViewModel
 
@@ -13,7 +20,6 @@ struct ContentView: View {
                 .padding(.vertical, 10)
         }
         .frame(width: 520, height: 130)
-        .clipped()
         .opacity(viewModel.isPaused ? 0.4 : 1.0)
         .animation(.easeInOut(duration: 0.3), value: viewModel.isPaused)
     }
@@ -62,6 +68,32 @@ struct AlignedLyricLine: View {
     private var pinyinSize: CGFloat { 11 * scale }
 
     var body: some View {
+        GeometryReader { geo in
+            let row = rowView
+            row
+                .fixedSize()                          // measure natural size
+                .background(
+                    GeometryReader { inner in
+                        Color.clear.preference(
+                            key: RowWidthKey.self,
+                            value: inner.size.width
+                        )
+                    }
+                )
+                .scaleEffect(
+                    min(1.0, (geo.size.width) / max(1, naturalWidth)),
+                    anchor: .center
+                )
+                .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: (hanziSize + pinyinSize + 4))  // fixed row height
+        .onPreferenceChange(RowWidthKey.self) { naturalWidth = $0 }
+    }
+
+    @State private var naturalWidth: CGFloat = 1
+
+    private var rowView: some View {
         HStack(alignment: .bottom, spacing: 2 * scale) {
             ForEach(Array(tokens.enumerated()), id: \.offset) { _, token in
                 VStack(spacing: 1) {
@@ -70,9 +102,7 @@ struct AlignedLyricLine: View {
                             .font(.system(size: pinyinSize))
                             .foregroundColor(dimmed ? Color.gray.opacity(0.4) : .gray)
                             .lineLimit(1)
-                            .fixedSize()
                     } else {
-                        // Invisible placeholder keeps baselines aligned
                         Color.clear
                             .frame(width: 1, height: pinyinSize + 1)
                     }
@@ -81,13 +111,8 @@ struct AlignedLyricLine: View {
                         .font(.system(size: hanziSize, weight: dimmed ? .regular : .medium))
                         .foregroundColor(dimmed ? Color.white.opacity(0.35) : .white)
                         .lineLimit(1)
-                        .fixedSize()
                 }
             }
         }
-        .frame(maxWidth: .infinity)
-        // Scale down the whole row if it overflows the pill width
-        .minimumScaleFactor(0.5)
-        .lineLimit(1)
     }
 }

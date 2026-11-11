@@ -13,65 +13,24 @@ struct ContentView: View {
     @ObservedObject var settings: DisplaySettings
 
     var body: some View {
-        switch settings.mode {
-        case .corner:
-            CornerCard(viewModel: viewModel)
-        default:
-            FloatingPill(viewModel: viewModel)
-        }
+        LyricCard(
+            viewModel: viewModel,
+            size: settings.mode == .corner ? OverlayLayout.cornerSize : OverlayLayout.floatingSize
+        )
     }
 }
 
-// MARK: - Floating pill
+// MARK: - Lyric card
 
-struct FloatingPill: View {
+/// High-contrast card with the track name on top, used by both the
+/// floating and the corner mode; only the size differs.
+struct LyricCard: View {
     @ObservedObject var viewModel: LyricsViewModel
+    let size: CGSize
 
     var body: some View {
         ZStack {
-            PanelBackground(cornerRadius: 18, tint: 0.45)
-
-            Group {
-                if viewModel.showLyrics {
-                    VStack(spacing: 6) {
-                        AlignedLyricLine(text: viewModel.currentHanzi)
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .bottom).combined(with: .opacity),
-                                removal: .move(edge: .top).combined(with: .opacity)
-                            ))
-                            .id(viewModel.currentHanzi)
-
-                        if !viewModel.nextHanzi.isEmpty {
-                            AlignedLyricLine(text: viewModel.nextHanzi, scale: 0.6, dimmed: true)
-                                .transition(.opacity)
-                                .id("next-\(viewModel.nextHanzi)")
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .animation(.easeInOut(duration: 0.3), value: viewModel.currentHanzi)
-                    .animation(.easeInOut(duration: 0.2), value: viewModel.nextHanzi)
-                } else {
-                    StatusText(message: viewModel.statusMessage, size: 13)
-                }
-            }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
-        }
-        .frame(width: OverlayLayout.floatingSize.width, height: OverlayLayout.floatingSize.height)
-        .opacity(viewModel.isPaused ? 0.4 : 1.0)
-        .animation(.easeInOut(duration: 0.3), value: viewModel.isPaused)
-    }
-}
-
-// MARK: - Corner card
-
-/// Larger, higher-contrast card for the bottom-right corner.
-struct CornerCard: View {
-    @ObservedObject var viewModel: LyricsViewModel
-
-    var body: some View {
-        ZStack {
-            PanelBackground(cornerRadius: 16, tint: 0.7)
+            PanelBackground(cornerRadius: 16, tint: 0.25)
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 6) {
@@ -109,8 +68,10 @@ struct CornerCard: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .padding(14)
+            // Keeps text readable over bright content behind the see-through panel.
+            .shadow(color: Color.black.opacity(0.8), radius: 2, x: 0, y: 1)
         }
-        .frame(width: OverlayLayout.cornerSize.width, height: OverlayLayout.cornerSize.height)
+        .frame(width: size.width, height: size.height)
         .opacity(viewModel.isPaused ? 0.7 : 1.0)
         .animation(.easeInOut(duration: 0.3), value: viewModel.isPaused)
     }
@@ -125,7 +86,7 @@ struct CornerCard: View {
 // MARK: - Shared pieces
 
 enum OverlayLayout {
-    static let floatingSize = CGSize(width: 520, height: 130)
+    static let floatingSize = CGSize(width: 520, height: 140)
     static let cornerSize = CGSize(width: 380, height: 140)
 }
 
@@ -145,8 +106,8 @@ struct StatusText: View {
     }
 }
 
-/// Dark frosted-glass panel: blurs what is behind the window, adds a dark tint
-/// for legibility and a hairline border.
+/// Light frosted-glass panel: a faded blur of what is behind the window, a
+/// light dark tint so the desktop still shows through, and a hairline border.
 struct PanelBackground: View {
     let cornerRadius: CGFloat
     let tint: Double
@@ -155,6 +116,7 @@ struct PanelBackground: View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         ZStack {
             VisualEffectBlur()
+                .opacity(0.6)   // fade the glass so it is more see-through
             Color.black.opacity(tint)
         }
         .clipShape(shape)

@@ -59,7 +59,7 @@ actor LyricsService {
         }
 
         var request = URLRequest(url: url)
-        request.setValue("SpotifyPinyinLyric/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("Lyricue/1.0", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 10
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -89,7 +89,7 @@ actor LyricsService {
         }
 
         var request = URLRequest(url: url)
-        request.setValue("SpotifyPinyinLyric/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("Lyricue/1.0", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 10
 
         let (data, response) = try await URLSession.shared.data(for: request)

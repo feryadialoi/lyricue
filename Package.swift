@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "SpotifyPinyinLyric",
+    name: "Lyricue",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "SpotifyPinyinLyric",
-            path: "Sources/SpotifyPinyinLyric"
+            name: "Lyricue",
+            path: "Sources/Lyricue"
         )
     ]
 )

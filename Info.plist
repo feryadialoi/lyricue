@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>SpotifyPinyinLyric</string>
+    <string>Lyricue</string>
     <key>CFBundleDisplayName</key>
-    <string>Spotify Pinyin Lyric</string>
+    <string>Lyricue</string>
     <key>CFBundleIdentifier</key>
-    <string>com.feryadi.spotify-pinyin-lyric</string>
+    <string>dev.feryadi.lyricue</string>
     <key>CFBundleVersion</key>
     <string>1.0.0</string>
     <key>CFBundleShortVersionString</key>
@@ -15,7 +15,7 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
-    <string>SpotifyPinyinLyric</string>
+    <string>Lyricue</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>LSMinimumSystemVersion</key>

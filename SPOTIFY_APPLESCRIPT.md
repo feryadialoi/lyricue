@@ -69,14 +69,14 @@ end tell'
 
 ```bash
 # Run in background
-.build/release/SpotifyPinyinLyric &
+.build/release/Lyricue &
 
 # Run in foreground (Cmd+C or Cmd+Q to stop)
-.build/release/SpotifyPinyinLyric
+.build/release/Lyricue
 
 # Kill
-pkill SpotifyPinyinLyric
+pkill Lyricue
 
 # Check if running
-pgrep -l SpotifyPinyinLyric
+pgrep -l Lyricue
 ```

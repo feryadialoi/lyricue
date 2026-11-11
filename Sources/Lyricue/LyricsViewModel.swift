@@ -10,6 +10,8 @@ final class LyricsViewModel: ObservableObject {
     @Published var statusMessage: String = "Waiting for Spotify…"
     @Published var showLyrics: Bool = false
     @Published var isPaused: Bool = false
+    @Published var trackTitle: String = ""
+    @Published var trackArtist: String = ""
 
     private let spotifyMonitor = SpotifyMonitor()
     private let lyricsService = LyricsService()
@@ -33,6 +35,8 @@ final class LyricsViewModel: ObservableObject {
     private func handleTrackUpdate(_ track: SpotifyTrack?) {
         guard let track else {
             statusMessage = "No track playing"
+            trackTitle = ""
+            trackArtist = ""
             showLyrics = false
             isPaused = false
             currentHanzi = ""
@@ -43,6 +47,8 @@ final class LyricsViewModel: ObservableObject {
         }
 
         isPaused = track.isPaused
+        if trackTitle != track.title { trackTitle = track.title }
+        if trackArtist != track.artist { trackArtist = track.artist }
 
         let trackKey = "\(track.title)|\(track.artist)"
 

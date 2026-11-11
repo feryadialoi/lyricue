@@ -1,14 +1,20 @@
 #!/bin/bash
 set -e
 
-APP_NAME="SpotifyPinyinLyric"
+APP_NAME="Lyricue"
 APP_BUNDLE="${APP_NAME}.app"
-RELEASE_BINARY=".build/release/${APP_NAME}"
 DMG_NAME="${APP_NAME}.dmg"
 DMG_STAGING="dmg-staging"
 
-echo "Building release binary..."
-swift build -c release
+# SwiftUI macros need the full Xcode toolchain, not just Command Line Tools.
+if [ -z "${DEVELOPER_DIR}" ] && [ -d /Applications/Xcode.app ]; then
+    export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+fi
+
+echo "Building universal release binary (Apple Silicon + Intel)..."
+BUILD_FLAGS=(-c release --arch arm64 --arch x86_64)
+swift build "${BUILD_FLAGS[@]}"
+RELEASE_BINARY="$(swift build "${BUILD_FLAGS[@]}" --show-bin-path)/${APP_NAME}"
 
 echo "Creating .app bundle..."
 rm -rf "${APP_BUNDLE}"

@@ -106,8 +106,8 @@ struct StatusText: View {
     }
 }
 
-/// Light frosted-glass panel: a faded blur of what is behind the window, a
-/// light dark tint so the desktop still shows through, and a hairline border.
+/// Frosted-glass panel: blurs what is behind the window, adds a light dark
+/// tint so the desktop still shows through, and a hairline border.
 struct PanelBackground: View {
     let cornerRadius: CGFloat
     let tint: Double
@@ -116,7 +116,6 @@ struct PanelBackground: View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         ZStack {
             VisualEffectBlur()
-                .opacity(0.6)   // fade the glass so it is more see-through
             Color.black.opacity(tint)
         }
         .clipShape(shape)
